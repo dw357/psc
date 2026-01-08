@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Performance Rating Wheel of Fortune</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+      background: linear-gradient(to bottom, #ffe4ec 0%, #fff 100%);
+      text-align: center;
+    }
+    h1 {
+      margin-top: 40px;
+      font-size: 2.2em;
+      color: #222;
+      font-weight: bold;
+    }
+    .subtitle {
+      color: #888;
+      font-size: 1.1em;
+      margin-bottom: 20px;
+    }
+    #canvas {
+      margin-top: 10px;
+      background: transparent;
+      border-radius: 50%;
+      box-shadow: 0 0 20px rgba(0,0,0,0.07);
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .cta {
+      margin-top: 30px;
+      color: #888;
+      font-size: 1.15em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    #result {
+      margin-top: 30px;
+      font-size: 1.3em;
+      font-weight: bold;
+      color: #d7263d;
+      min-height: 2em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Performance Rating Wheel of Fortune</h1>
+  <div class="subtitle">Spin until morale improves.</div>
+  <canvas id="canvas" width="400" height="400"></canvas>
+  <div class="cta">
+    <span>Click the wheel to discover your performance rating!</span>
+    <span style="font-size:1.3em;">🎯</span>
+  </div>
+  <div id="result"></div>
+  <script>
+    // Spinner slice definitions (labels, percentages, colors)
+    const slices = [
+      { label: "Redefined", percent: 1, color: "#ffe066" },           // yellow
+      { label: "Greatly Exceeded", percent: 19, color: "#d7263d" },   // red
+      { label: "Exceeded", percent: 30, color: "#36cfc9" },           // teal
+      { label: "Consistently Met", percent: 30, color: "#7bd389" },   // light green
+      { label: "Met Most", percent: 15, color: "#ff6f91" },           // pink
+      { label: "Met Some", percent: 3, color: "#a259c6" },            // purple
+      { label: "Did Not Meet", percent: 2, color: "#f7cac9" }         // light pink
+    ];
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const radius = canvas.width / 2;
+    let rotation = 0;
+    let spinning = false;
+
+    // Draw the spinner wheel
+    function drawWheel(rot = 0) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let angle = rot;
+      slices.forEach(slice => {
+        const sliceAngle = (slice.percent / 100) * 2 * Math.PI;
+        ctx.beginPath();
+        ctx.moveTo(radius, radius);
+        ctx.arc(radius, radius, radius - 10, angle, angle + sliceAngle);
+        ctx.closePath();
+        ctx.fillStyle = slice.color;
+        ctx.fill();
+        // Draw label
+        ctx.save();
+        ctx.translate(radius, radius);
+        ctx.rotate(angle + sliceAngle / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#222";
+        ctx.font = "bold 16px Arial";
+        ctx.fillText(slice.label, radius - 40, 0);
+        ctx.restore();
+        angle += sliceAngle;
+      });
+      // Draw center circle (spin button)
+      ctx.beginPath();
+      ctx.arc(radius, radius, 60, 0, 2 * Math.PI);
+      ctx.fillStyle = "#ffe066";
+      ctx.fill();
+      ctx.strokeStyle = "#222";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = "#222";
+      ctx.font = "bold 28px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("SPIN!", radius, radius);
+
+      // Draw pointer (red triangle at top)
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(radius, 18);
+      ctx.lineTo(radius - 18, 45);
+      ctx.lineTo(radius + 18, 45);
+      ctx.closePath();
+      ctx.fillStyle = "#d7263d";
+      ctx.fill();
+      ctx.restore();
+    }
+
+    drawWheel();
+
+    // Spin logic
+    function spinWheel() {
+      if (spinning) return;
+      spinning = true;
+      let spinTime = 0;
+      let spinDuration = 3000 + Math.random() * 1000;
+      let lastTimestamp = null;
+      let startRotation = rotation;
+      let extraSpins = Math.floor(Math.random() * 3) + 3; // 3-5 full spins
+
+      function animateSpin(timestamp) {
+        if (!lastTimestamp) lastTimestamp = timestamp;
+        let delta = timestamp - lastTimestamp;
+        lastTimestamp = timestamp;
+        spinTime += delta;
+        // Ease out
+        let progress = Math.min(spinTime / spinDuration, 1);
+        let eased = 1 - Math.pow(1 - progress, 3);
+        rotation = startRotation + eased * (2 * Math.PI * extraSpins + Math.random() * 2 * Math.PI);
+        drawWheel(rotation);
+        if (progress < 1) {
+          requestAnimationFrame(animateSpin);
+        } else {
+          spinning = false;
+          // Determine result
+          let finalAngle = (rotation % (2 * Math.PI));
+          let angle = 0;
+          let resultLabel = "";
+          for (let slice of slices) {
+            const sliceAngle = (slice.percent / 100) * 2 * Math.PI;
+            if (finalAngle >= angle && finalAngle < angle + sliceAngle) {
+              resultLabel = slice.label;
+              break;
+            }
+            angle += sliceAngle;
+          }
+          // Playful result message
+          document.getElementById('result').textContent =
+            `Your performance rating is: ${resultLabel}! 🎉`;
+        }
+      }
+      requestAnimationFrame(animateSpin);
+    }
+
+    // Click to spin (center circle or anywhere on wheel)
+    canvas.addEventListener('click', spinWheel);
+  </script>
+</body>
+</html>
