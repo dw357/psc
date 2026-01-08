@@ -127,6 +127,23 @@
 
     drawWheel();
 
+    // Helper: Get slice at needle position
+    function getSliceAtNeedle(rot) {
+      // Needle is at angle 0, so we want the slice that covers angle = (2PI - (rot % 2PI)) % 2PI
+      let normalizedAngle = (2 * Math.PI - (rot % (2 * Math.PI))) % (2 * Math.PI);
+      let angle = 0;
+      for (let i = 0; i < slices.length; i++) {
+        const sliceAngle = (slices[i].percent / 100) * 2 * Math.PI;
+        // Use <= for start, < for end, and add a small epsilon to avoid floating point errors
+        if (normalizedAngle >= angle - 1e-10 && normalizedAngle < angle + sliceAngle - 1e-10) {
+          return slices[i].label;
+        }
+        angle += sliceAngle;
+      }
+      // If not found due to rounding, return last slice
+      return slices[slices.length - 1].label;
+    }
+
     // Spin logic
     function spinWheel() {
       if (spinning) return;
@@ -151,19 +168,8 @@
           requestAnimationFrame(animateSpin);
         } else {
           spinning = false;
-          // Determine result: the slice at the top (needle position)
-          // The needle is at angle 0, so we need to find which slice covers angle = (2PI - (rotation % 2PI)) % 2PI
-          let normalizedAngle = (2 * Math.PI - (rotation % (2 * Math.PI))) % (2 * Math.PI);
-          let angle = 0;
-          let resultLabel = "";
-          for (let slice of slices) {
-            const sliceAngle = (slice.percent / 100) * 2 * Math.PI;
-            if (normalizedAngle >= angle && normalizedAngle < angle + sliceAngle) {
-              resultLabel = slice.label;
-              break;
-            }
-            angle += sliceAngle;
-          }
+          // Use robust slice calculation
+          let resultLabel = getSliceAtNeedle(rotation);
           document.getElementById('result').textContent =
             `Your performance rating is: ${resultLabel}! 🎉`;
         }
