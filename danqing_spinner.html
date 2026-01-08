@@ -113,14 +113,14 @@
       ctx.textBaseline = "middle";
       ctx.fillText("SPIN!", radius, radius);
 
-      // Draw pointer (red triangle at top)
+      // Draw pointer (needle) at top - now orange
       ctx.save();
       ctx.beginPath();
       ctx.moveTo(radius, 18);
       ctx.lineTo(radius - 18, 45);
       ctx.lineTo(radius + 18, 45);
       ctx.closePath();
-      ctx.fillStyle = "#d7263d";
+      ctx.fillStyle = "#ff9800"; // orange needle
       ctx.fill();
       ctx.restore();
     }
@@ -151,19 +151,19 @@
           requestAnimationFrame(animateSpin);
         } else {
           spinning = false;
-          // Determine result
-          let finalAngle = (rotation % (2 * Math.PI));
+          // Determine result: the slice at the top (needle position)
+          // The needle is at angle 0, so we need to find which slice covers angle = (2PI - (rotation % 2PI)) % 2PI
+          let normalizedAngle = (2 * Math.PI - (rotation % (2 * Math.PI))) % (2 * Math.PI);
           let angle = 0;
           let resultLabel = "";
           for (let slice of slices) {
             const sliceAngle = (slice.percent / 100) * 2 * Math.PI;
-            if (finalAngle >= angle && finalAngle < angle + sliceAngle) {
+            if (normalizedAngle >= angle && normalizedAngle < angle + sliceAngle) {
               resultLabel = slice.label;
               break;
             }
             angle += sliceAngle;
           }
-          // Playful result message
           document.getElementById('result').textContent =
             `Your performance rating is: ${resultLabel}! 🎉`;
         }
